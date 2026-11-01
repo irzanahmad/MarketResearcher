@@ -1,0 +1,11 @@
+.env
+.env.*
+!.env.example
+.venv/
+__pycache__/
+*.py[cod]
+*.sqlite3
+staticfiles/
+check_output.txt
+single_test.txt
+test_output.txt

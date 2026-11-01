@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f8fafc">
+    <title>Register | SignalScope</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        input[type="text"], input[type="password"] {
+            display: block;
+            width: 100%;
+            border: 1px solid #cbd5e1;
+            border-radius: 0.5rem;
+            background: #fff;
+            padding: 0.625rem 0.75rem;
+            color: #0f172a;
+            font-size: 0.875rem;
+        }
+        input[type="text"]:focus, input[type="password"]:focus {
+            outline: none;
+            border-color: #64748b;
+            box-shadow: 0 0 0 3px rgb(148 163 184 / 18%);
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-[#f8fafc] text-slate-600 antialiased">
+    <main class="mx-auto flex min-h-screen max-w-md flex-col justify-center px-5 py-10">
+        <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+            <p class="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">SignalScope</p>
+            <h1 class="mt-2 text-2xl font-semibold tracking-tight text-slate-900">Create account</h1>
+            <p class="mt-2 text-sm leading-relaxed text-slate-600">
+                You must confirm that you are 18 or older to use SignalScope.
+            </p>
+
+            {% if messages %}
+                <div class="mt-4 space-y-2" aria-live="polite">
+                    {% for message in messages %}
+                        <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            {% if form.non_field_errors %}
+                <div class="mt-4 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800">
+                    {{ form.non_field_errors }}
+                </div>
+            {% endif %}
+
+            <form method="post" action="{% url 'analyzer:register' %}" class="mt-6 space-y-4">
+                {% csrf_token %}
+
+                <div>
+                    <label for="{{ form.username.id_for_label }}" class="mb-2 block text-sm font-medium text-slate-700">
+                        {{ form.username.label }}
+                    </label>
+                    {{ form.username }}
+                    {% if form.username.errors %}
+                        <p class="mt-1 text-sm text-rose-700">{{ form.username.errors }}</p>
+                    {% endif %}
+                </div>
+
+                <div>
+                    <label for="{{ form.password1.id_for_label }}" class="mb-2 block text-sm font-medium text-slate-700">
+                        {{ form.password1.label }}
+                    </label>
+                    {{ form.password1 }}
+                    {% if form.password1.errors %}
+                        <p class="mt-1 text-sm text-rose-700">{{ form.password1.errors }}</p>
+                    {% endif %}
+                </div>
+
+                <div>
+                    <label for="{{ form.password2.id_for_label }}" class="mb-2 block text-sm font-medium text-slate-700">
+                        {{ form.password2.label }}
+                    </label>
+                    {{ form.password2 }}
+                    {% if form.password2.errors %}
+                        <p class="mt-1 text-sm text-rose-700">{{ form.password2.errors }}</p>
+                    {% endif %}
+                </div>
+
+                <div class="flex items-start gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
+                    {{ form.age_confirmed }}
+                    <label for="{{ form.age_confirmed.id_for_label }}" class="text-sm leading-relaxed text-slate-700">
+                        {{ form.age_confirmed.label }}
+                    </label>
+                </div>
+                {% if form.age_confirmed.errors %}
+                    <p class="text-sm text-rose-700">{{ form.age_confirmed.errors }}</p>
+                {% endif %}
+
+                <button
+                    type="submit"
+                    class="inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-slate-300"
+                >
+                    Create account
+                </button>
+            </form>
+
+            <p class="mt-6 text-center text-sm text-slate-600">
+                Already have an account?
+                <a href="{% url 'login' %}" class="font-medium text-slate-900 underline decoration-slate-300 underline-offset-4 hover:decoration-slate-600">
+                    Log in
+                </a>
+            </p>
+        </div>
+    </main>
+</body>
+</html>

@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f8fafc">
+    <title>{{ report.query }} | SignalScope report</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-[#f8fafc] text-slate-600 antialiased">
+    <header class="border-b border-slate-200 bg-white">
+        <nav class="mx-auto flex h-16 max-w-6xl items-center justify-between px-5 sm:px-8" aria-label="Main navigation">
+            <a href="{% url 'analyzer:dashboard' %}" class="text-lg font-bold tracking-tight text-slate-900">
+                SignalScope
+            </a>
+            <div class="flex items-center gap-4">
+                <a href="{% url 'analyzer:dashboard' %}" class="text-sm font-medium text-slate-600 transition hover:text-slate-900">
+                    All reports
+                </a>
+                {% if user.is_authenticated %}
+                    <form method="post" action="{% url 'logout' %}" class="inline">
+                        {% csrf_token %}
+                        <button type="submit" class="text-sm font-medium text-slate-600 transition hover:text-slate-900">
+                            Log out
+                        </button>
+                    </form>
+                {% else %}
+                    <a href="{% url 'login' %}" class="text-sm font-medium text-slate-600 transition hover:text-slate-900">Log in</a>
+                {% endif %}
+            </div>
+        </nav>
+    </header>
+
+    <main class="mx-auto max-w-6xl px-5 py-10 sm:px-8 sm:py-14">
+        <div class="mb-6 text-sm text-slate-500">
+            <a href="{% url 'analyzer:dashboard' %}" class="transition hover:text-slate-900">Dashboard</a>
+            <span class="mx-2 text-slate-300" aria-hidden="true">/</span>
+            <span class="text-slate-700">Report</span>
+        </div>
+
+        <section class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+            <div class="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+                <div class="min-w-0">
+                    <p class="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Market intelligence report</p>
+                    <h1 class="mt-3 break-words text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
+                        {{ report.query }}
+                    </h1>
+                    <p class="mt-3 text-sm leading-relaxed text-slate-600">
+                        Created {{ report.created_at|date:"F j, Y · g:i A" }}
+                    </p>
+                </div>
+
+                <div class="flex shrink-0 flex-wrap items-center gap-2">
+                    {% if report.status == "COMPLETED" %}
+                        {% if report.sentiment_score == "Positive" %}
+                            <span class="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1.5 text-sm font-medium text-emerald-800">
+                                {{ report.sentiment_score }} sentiment
+                            </span>
+                        {% elif report.sentiment_score == "Negative" %}
+                            <span class="inline-flex items-center rounded-full bg-rose-100 px-3 py-1.5 text-sm font-medium text-rose-800">
+                                {{ report.sentiment_score }} sentiment
+                            </span>
+                        {% else %}
+                            <span class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1.5 text-sm font-medium text-slate-700">
+                                {{ report.sentiment_score }} sentiment
+                            </span>
+                        {% endif %}
+                    {% endif %}
+
+                    {% if report.status == "PENDING" or report.status == "PROCESSING" %}
+                        <span class="inline-flex items-center rounded-full bg-amber-100 px-3 py-1.5 text-xs font-medium text-amber-800">
+                            {{ report.get_status_display }}
+                        </span>
+                    {% elif report.status == "COMPLETED" %}
+                        <span class="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1.5 text-xs font-medium text-emerald-800">
+                            {{ report.get_status_display }}
+                        </span>
+                    {% else %}
+                        <span class="inline-flex items-center rounded-full bg-rose-100 px-3 py-1.5 text-xs font-medium text-rose-800">
+                            {{ report.get_status_display }}
+                        </span>
+                    {% endif %}
+                </div>
+            </div>
+        </section>
+
+        {% if report.status == "COMPLETED" %}
+            <section class="mt-10" aria-labelledby="swot-heading">
+                <div class="mb-5">
+                    <p class="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Strategic overview</p>
+                    <h2 id="swot-heading" class="mt-2 text-2xl font-semibold tracking-tight text-slate-900">SWOT analysis</h2>
+                    <p class="mt-2 text-sm leading-relaxed text-slate-600">
+                        A structured view of internal capabilities and external market conditions.
+                    </p>
+                </div>
+
+                <div class="grid gap-4 md:grid-cols-2">
+                    <article class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm sm:p-7">
+                        <h3 class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Strengths</h3>
+                        {% if report.swot_json.strengths %}
+                            <ul class="mt-5 list-disc space-y-3 pl-5 text-sm leading-relaxed text-slate-700 marker:text-slate-400">
+                                {% for item in report.swot_json.strengths %}
+                                    <li class="pl-1">{{ item }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            <p class="mt-5 text-sm leading-relaxed text-slate-500">No strengths were identified from the available information.</p>
+                        {% endif %}
+                    </article>
+
+                    <article class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm sm:p-7">
+                        <h3 class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Weaknesses</h3>
+                        {% if report.swot_json.weaknesses %}
+                            <ul class="mt-5 list-disc space-y-3 pl-5 text-sm leading-relaxed text-slate-700 marker:text-slate-400">
+                                {% for item in report.swot_json.weaknesses %}
+                                    <li class="pl-1">{{ item }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            <p class="mt-5 text-sm leading-relaxed text-slate-500">No weaknesses were identified from the available information.</p>
+                        {% endif %}
+                    </article>
+
+                    <article class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm sm:p-7">
+                        <h3 class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Opportunities</h3>
+                        {% if report.swot_json.opportunities %}
+                            <ul class="mt-5 list-disc space-y-3 pl-5 text-sm leading-relaxed text-slate-700 marker:text-slate-400">
+                                {% for item in report.swot_json.opportunities %}
+                                    <li class="pl-1">{{ item }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            <p class="mt-5 text-sm leading-relaxed text-slate-500">No opportunities were identified from the available information.</p>
+                        {% endif %}
+                    </article>
+
+                    <article class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm sm:p-7">
+                        <h3 class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Threats</h3>
+                        {% if report.swot_json.threats %}
+                            <ul class="mt-5 list-disc space-y-3 pl-5 text-sm leading-relaxed text-slate-700 marker:text-slate-400">
+                                {% for item in report.swot_json.threats %}
+                                    <li class="pl-1">{{ item }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            <p class="mt-5 text-sm leading-relaxed text-slate-500">No threats were identified from the available information.</p>
+                        {% endif %}
+                    </article>
+                </div>
+            </section>
+
+            <section class="mt-8 rounded-xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8" aria-labelledby="intelligence-document-heading">
+                <div class="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+                    <div class="max-w-3xl">
+                        <p class="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Exportable reference</p>
+                        <h2 id="intelligence-document-heading" class="mt-2 text-xl font-semibold tracking-tight text-slate-900">
+                            Professional Analysis &amp; Media Directory Document
+                        </h2>
+                        <p class="mt-3 text-sm leading-relaxed text-slate-600">
+                            This dynamically compiled text index contains the fully verified SWOT telemetry along with external reference directories for sensitive media validation.
+                        </p>
+                    </div>
+                    <a
+                        href="{% url 'analyzer:download_report_doc' report_id=report.pk %}"
+                        class="inline-flex min-h-11 shrink-0 items-center justify-center rounded-lg bg-slate-900 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-slate-300"
+                    >
+                        Download Intelligence Document (.txt)
+                    </a>
+                </div>
+            </section>
+        {% elif report.status == "FAILED" %}
+            <section class="mt-8 rounded-xl border border-rose-200 bg-white p-6 shadow-sm" role="status">
+                <h2 class="text-base font-semibold text-slate-900">Report unavailable</h2>
+                <p class="mt-2 text-sm leading-relaxed text-slate-600">
+                    The analysis could not be completed. Return to the dashboard to create another report.
+                </p>
+            </section>
+        {% else %}
+            <section class="mt-8 rounded-xl border border-slate-200 bg-white p-6 shadow-sm" role="status">
+                <h2 class="text-base font-semibold text-slate-900">Report is processing</h2>
+                <p class="mt-2 text-sm leading-relaxed text-slate-600">
+                    Market data is being collected and analyzed. Refresh this page shortly to view the results.
+                </p>
+            </section>
+        {% endif %}
+
+        {% if report.raw_scraped_data %}
+            <details class="mt-8 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+                <summary class="cursor-pointer px-6 py-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-900">
+                    View collected market data
+                </summary>
+                <pre class="max-h-96 overflow-auto border-t border-slate-200 bg-slate-50 p-6 text-xs leading-relaxed text-slate-600">{{ report.raw_scraped_data }}</pre>
+            </details>
+        {% endif %}
+    </main>
+</body>
+</html>
