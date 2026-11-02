@@ -5,6 +5,7 @@ from urllib.parse import urlencode
 from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
+from django.conf import settings
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.text import slugify
@@ -38,6 +39,22 @@ def _render_dashboard(request, form=None, status=200):
 
 
 def _start_report(request, report):
+    if settings.IS_VERCEL:
+        try:
+            process_market_report(report.pk)
+        except Exception:
+            logger.exception(
+                "Synchronous Vercel processing failed for report %s.",
+                report.pk,
+            )
+            messages.error(
+                request,
+                "The report could not be completed. Please try again later.",
+            )
+        else:
+            messages.success(request, "Your market report is ready.")
+        return redirect("analyzer:report-detail", report_id=report.pk)
+
     worker = threading.Thread(
         target=process_market_report,
         args=(report.pk,),

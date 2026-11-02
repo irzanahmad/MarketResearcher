@@ -108,6 +108,25 @@ class MarketAnalysisTests(TestCase):
         )
         thread_class.return_value.start.assert_called_once()
 
+    @override_settings(IS_VERCEL=True)
+    @patch("analyzer.views.threading.Thread")
+    @patch("analyzer.views.process_market_report")
+    def test_vercel_report_processing_runs_before_serverless_response(
+        self, process_report, thread_class
+    ):
+        response = self.client.post(
+            reverse("analyzer:create-report"),
+            {"query": "Serverless market"},
+        )
+
+        report = MarketReport.objects.get(query="Serverless market")
+        self.assertRedirects(
+            response,
+            reverse("analyzer:report-detail", args=[report.pk]),
+        )
+        process_report.assert_called_once_with(report.pk)
+        thread_class.assert_not_called()
+
     def test_analysis_rejects_an_invalid_swot_structure(self):
         with self.assertRaises(ValueError):
             _validate_analysis(

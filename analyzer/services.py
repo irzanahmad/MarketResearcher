@@ -242,8 +242,8 @@ def analyze_market_trends(report_id):
         try:
             client = Groq(
                 api_key=settings.GROQ_API_KEY,
-                timeout=90.0,
-                max_retries=2,
+                timeout=55.0,
+                max_retries=1,
             )
             completion = client.chat.completions.create(
                 model=settings.GROQ_MODEL,

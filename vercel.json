@@ -1,0 +1,7 @@
+{
+  "functions": {
+    "core/wsgi.py": {
+      "maxDuration": 180
+    }
+  }
+}

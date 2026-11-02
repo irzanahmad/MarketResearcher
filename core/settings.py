@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/6.1/ref/settings/
 import os
 from pathlib import Path
 
+import dj_database_url
 from dotenv import load_dotenv
 from django.core.exceptions import ImproperlyConfigured
 
@@ -21,6 +22,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 load_dotenv(BASE_DIR / '.env')
 
+IS_VERCEL = os.getenv('VERCEL') == '1'
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
@@ -31,13 +33,29 @@ if not SECRET_KEY:
         'DJANGO_SECRET_KEY must be configured in the environment or .env file.'
     )
 
-DEBUG = os.getenv('DJANGO_DEBUG', 'False').lower() in {'true', '1', 'yes', 'on'}
+DEBUG = (
+    not IS_VERCEL
+    and os.getenv('DJANGO_DEBUG', 'False').lower() in {'true', '1', 'yes', 'on'}
+)
 
 ALLOWED_HOSTS = [
     host.strip()
     for host in os.getenv('DJANGO_ALLOWED_HOSTS', '').split(',')
     if host.strip()
 ]
+if IS_VERCEL:
+    ALLOWED_HOSTS.append('.vercel.app')
+    vercel_url = os.getenv('VERCEL_URL')
+    if vercel_url:
+        ALLOWED_HOSTS.append(vercel_url)
+
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv('DJANGO_CSRF_TRUSTED_ORIGINS', '').split(',')
+    if origin.strip()
+]
+if IS_VERCEL:
+    CSRF_TRUSTED_ORIGINS.append('https://*.vercel.app')
 
 GROQ_API_KEY = os.getenv('GROQ_API_KEY')
 GROQ_MODEL = os.getenv('GROQ_MODEL', 'openai/gpt-oss-20b')
@@ -92,11 +110,33 @@ WSGI_APPLICATION = 'core.wsgi.application'
 # https://docs.djangoproject.com/en/6.1/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    'default': (
+        dj_database_url.parse(
+            os.environ['DATABASE_URL'],
+            conn_max_age=0,
+            ssl_require=not DEBUG,
+        )
+        if os.getenv('DATABASE_URL')
+        else {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    )
 }
+if IS_VERCEL and not os.getenv('DATABASE_URL'):
+    raise ImproperlyConfigured(
+        'DATABASE_URL must point to a persistent PostgreSQL database on Vercel. '
+        'SQLite is not persistent in Vercel serverless functions.'
+    )
+
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SECURE_SSL_REDIRECT = not DEBUG
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
+SECURE_HSTS_SECONDS = 31_536_000 if not DEBUG else 0
+SECURE_HSTS_INCLUDE_SUBDOMAINS = not DEBUG
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = 'DENY'
 
 
 # Password validation
@@ -137,10 +177,21 @@ STATIC_URL = 'static/'
 
 
 # Email
-# https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration
 
 MAILERS = {
     'default': {
-        'BACKEND': 'django.core.mail.backends.console.EmailBackend',
+        'BACKEND': os.getenv(
+            'EMAIL_BACKEND',
+            'django.core.mail.backends.smtp.EmailBackend',
+        ),
+        'OPTIONS': {
+            'host': os.getenv('EMAIL_HOST', 'localhost'),
+            'port': int(os.getenv('EMAIL_PORT', '587')),
+            'username': os.getenv('EMAIL_HOST_USER', ''),
+            'password': os.getenv('EMAIL_HOST_PASSWORD', ''),
+            'use_tls': os.getenv('EMAIL_USE_TLS', 'True').lower()
+            in {'true', '1', 'yes', 'on'},
+            'timeout': 30,
+        },
     },
 }
