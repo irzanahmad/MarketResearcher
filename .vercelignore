@@ -1,0 +1,11 @@
+.env*
+.vercel/
+.venv/
+.git/
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*.sqlite3
+check_output.txt
+single_test.txt
+test_output.txt
